@@ -1,0 +1,12 @@
+# This file excludes local files from the Docker build context.
+# It keeps dependencies, build output and private settings out of the image.
+# Docker reads it automatically when building this folder.
+node_modules
+dist
+test-results
+playwright-report
+*.tsbuildinfo
+
+.env
+.env.*
+.git

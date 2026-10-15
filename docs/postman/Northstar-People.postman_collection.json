@@ -1,0 +1,382 @@
+{
+  "info": {
+    "name": "Northstar People",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run in order against a disposable development database. Set baseUrl, email, password. Keep the cookie jar enabled. Requests create and delete synthetic demonstration records; never run against production."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8088"
+    },
+    {
+      "key": "email",
+      "value": "admin@example.com"
+    },
+    {
+      "key": "password",
+      "value": "SET_YOUR_LOCAL_ADMIN_PASSWORD"
+    },
+    {
+      "key": "csrfHeader",
+      "value": "X-CSRF-TOKEN"
+    },
+    {
+      "key": "csrfToken",
+      "value": ""
+    },
+    {
+      "key": "departmentId",
+      "value": ""
+    },
+    {
+      "key": "departmentVersion",
+      "value": ""
+    },
+    {
+      "key": "employeeId",
+      "value": ""
+    },
+    {
+      "key": "employeeVersion",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 \u00b7 Get CSRF token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/auth/csrf"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"CSRF token available\", () => pm.response.to.have.status(200));",
+              "const token = pm.response.json(); pm.collectionVariables.set(\"csrfToken\", token.token); pm.collectionVariables.set(\"csrfHeader\", token.headerName);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 \u00b7 Sign in",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "{{csrfHeader}}",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "email",
+              "value": "{{email}}"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Signed in\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 \u00b7 Refresh CSRF after login",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/auth/csrf"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"CSRF token available\", () => pm.response.to.have.status(200));",
+              "const token = pm.response.json(); pm.collectionVariables.set(\"csrfToken\", token.token); pm.collectionVariables.set(\"csrfHeader\", token.headerName);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 \u00b7 Current administrator",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/auth/me"
+      }
+    },
+    {
+      "name": "05 \u00b7 Create department",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "{{csrfHeader}}",
+            "value": "{{csrfToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/departments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Demo Team\",\n  \"description\": \"Synthetic API demonstration\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Created\", () => pm.response.to.have.status(201));",
+              "const d=pm.response.json(); pm.collectionVariables.set(\"departmentId\",d.id);pm.collectionVariables.set(\"departmentVersion\",d.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 \u00b7 List departments",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/departments"
+      }
+    },
+    {
+      "name": "07 \u00b7 Create employee",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "{{csrfHeader}}",
+            "value": "{{csrfToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/employees",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\":\"Postman Demo Employee\",\n  \"email\":\"postman.demo@example.com\",\n  \"phone\":\"+91 9876543210\",\n  \"departmentId\":{{departmentId}},\n  \"designation\":\"Software Engineer\",\n  \"joiningDate\":\"2024-03-01\",\n  \"salary\":900000.50,\n  \"status\":\"ACTIVE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Created\", () => pm.response.to.have.status(201));",
+              "const e=pm.response.json();pm.collectionVariables.set(\"employeeId\",e.id);pm.collectionVariables.set(\"employeeVersion\",e.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 \u00b7 Search, filter, and paginate",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/employees?search=postman&department={{departmentId}}&status=ACTIVE&page=0&size=10&sort=fullName&direction=asc"
+      }
+    },
+    {
+      "name": "09 \u00b7 Employee details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/employees/{{employeeId}}"
+      }
+    },
+    {
+      "name": "10 \u00b7 Update employee",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "{{csrfHeader}}",
+            "value": "{{csrfToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/employees/{{employeeId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\":\"Postman Demo Employee\",\n  \"email\":\"postman.demo@example.com\",\n  \"phone\":\"+91 9876543210\",\n  \"departmentId\":{{departmentId}},\n  \"designation\":\"Senior Software Engineer\",\n  \"joiningDate\":\"2024-03-01\",\n  \"salary\":900000.50,\n  \"status\":\"ACTIVE\",\n  \"version\":{{employeeVersion}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Updated\", () => pm.response.to.have.status(200));",
+              "const e=pm.response.json();pm.collectionVariables.set(\"employeeId\",e.id);pm.collectionVariables.set(\"employeeVersion\",e.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 \u00b7 Summary counts",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/employees/summary"
+      }
+    },
+    {
+      "name": "12 \u00b7 Export filtered CSV",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/v1/employees/export?department={{departmentId}}"
+      }
+    },
+    {
+      "name": "13 \u00b7 Occupied department safeguard (expect 409)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "{{csrfHeader}}",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/departments/{{departmentId}}?version={{departmentVersion}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Occupied department protected\", () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 \u00b7 Delete demo employee",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "{{csrfHeader}}",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/employees/{{employeeId}}?version={{employeeVersion}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Deleted\", () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 \u00b7 Delete demo department",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "{{csrfHeader}}",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/departments/{{departmentId}}?version={{departmentVersion}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Deleted\", () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 \u00b7 Sign out",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "{{csrfHeader}}",
+            "value": "{{csrfToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/auth/logout"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Signed out\", () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

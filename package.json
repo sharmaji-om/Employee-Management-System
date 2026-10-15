@@ -1,0 +1,15 @@
+{
+  "name": "northstar-people-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "setup": "node scripts/local.mjs setup",
+    "dev": "node scripts/local.mjs dev",
+    "dev:backend": "node scripts/local.mjs backend",
+    "dev:frontend": "node scripts/local.mjs frontend",
+    "check": "node scripts/local.mjs check",
+    "test:launcher": "node --test scripts/local.test.mjs"
+  }
+}

@@ -1,0 +1,50 @@
+# This file configures the backend, database and application services.
+# Provide database and administrator settings through the root .env file.
+# Run npm run dev from the root to load those settings and start the app.
+spring:
+  application:
+    name: northstar-people
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/people}
+    username: ${DATABASE_USER:people}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: 10
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        secure: ${COOKIE_SECURE:false}
+        same-site: strict
+  error:
+    include-message: never
+    include-stacktrace: never
+management:
+  endpoints.web.exposure.include: health,info
+  endpoint.health:
+    show-details: never
+    probes.enabled: true
+springdoc:
+  swagger-ui:
+    path: /docs
+    csrf.enabled: true
+app:
+  admin-email: ${ADMIN_EMAIL:}
+  admin-password: ${ADMIN_PASSWORD:}
+  demo-data: ${DEMO_DATA:false}
+  currency: ${APP_CURRENCY:INR}
+logging:
+  pattern.console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%X{requestId}] %logger{36} - %msg%n"

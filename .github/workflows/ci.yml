@@ -1,0 +1,82 @@
+# This file defines the automated repository checks.
+# GitHub runs backend and frontend checks on pushes and pull requests.
+# Review the Actions tab in GitHub to see results.
+name: Verify application
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - run: chmod +x mvnw && ./mvnw -B verify
+        working-directory: backend
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm run test:launcher
+      - run: npm ci && npm run lint && npm run format:check && npm test && npm run build
+        working-directory: frontend
+  browser:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_DB: people
+          POSTGRES_USER: people
+          POSTGRES_PASSWORD: ci-only-database-password
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U people" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_PASSWORD: ci-only-database-password
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: ci-only-admin-password-2026
+      E2E_PASSWORD: ci-only-admin-password-2026
+      DEMO_DATA: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: chmod +x mvnw && ./mvnw -B package
+        working-directory: backend
+      - run: |
+          java -jar backend/target/people-1.0.0.jar > backend.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://localhost:8080/actuator/health/readiness; then exit 0; fi
+            sleep 2
+          done
+          cat backend.log
+          exit 1
+      - run: npm ci && npx playwright install --with-deps chromium && npm run test:e2e
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            backend.log

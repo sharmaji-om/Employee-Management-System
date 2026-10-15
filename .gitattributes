@@ -1,0 +1,7 @@
+# This file sets line endings for files saved in Git.
+# Shell scripts use LF and Windows command scripts use CRLF.
+# Git applies these settings when files are checked out or added.
+* text=auto
+*.sh text eol=lf
+mvnw text eol=lf
+*.cmd text eol=crlf

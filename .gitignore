@@ -1,0 +1,17 @@
+# This file tells Git which local files to leave out.
+# It excludes secrets, dependencies, build output and test reports.
+# Git reads it automatically; no separate command is needed.
+.env
+.env.*
+!.env.example
+!.env.docker.example
+**/node_modules/
+**/dist/
+**/target/
+**/*.tsbuildinfo
+**/playwright-report/
+**/test-results/
+.idea/
+.vscode/
+*.log
+.DS_Store
